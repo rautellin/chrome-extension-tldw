@@ -15,6 +15,7 @@ const elements = {
   readyState: document.getElementById('ready-state'),
   loadingState: document.getElementById('loading-state'),
   resultState: document.getElementById('result-state'),
+  transcriptState: document.getElementById('transcript-state'),
   errorState: document.getElementById('error-state'),
   
   // Video info
@@ -24,12 +25,16 @@ const elements = {
   
   // Actions
   summarizeBtn: document.getElementById('summarize-btn'),
+  transcriptBtn: document.getElementById('transcript-btn'),
   copyBtn: document.getElementById('copy-btn'),
+  copyTranscriptBtn: document.getElementById('copy-transcript-btn'),
   newSummaryBtn: document.getElementById('new-summary-btn'),
+  backToVideoBtn: document.getElementById('back-to-video-btn'),
   retryBtn: document.getElementById('retry-btn'),
-  
+
   // Result
   summaryContent: document.getElementById('summary-content'),
+  transcriptContent: document.getElementById('transcript-content'),
   loadingStatus: document.getElementById('loading-status'),
   errorMessage: document.getElementById('error-message'),
   
@@ -81,8 +86,14 @@ function setupEventListeners() {
   
   // Summary view
   elements.summarizeBtn.addEventListener('click', handleSummarize);
+  elements.transcriptBtn.addEventListener('click', handleGetTranscript);
   elements.copyBtn.addEventListener('click', handleCopy);
+  elements.copyTranscriptBtn.addEventListener('click', handleCopyTranscript);
   elements.newSummaryBtn.addEventListener('click', handleSummarize);
+  elements.backToVideoBtn.addEventListener('click', () => {
+    showSummaryView();
+    checkCurrentTab();
+  });
   elements.retryBtn.addEventListener('click', handleSummarize);
   
   // Settings
@@ -129,6 +140,7 @@ function hideAllStates() {
   elements.readyState.classList.add('hidden');
   elements.loadingState.classList.add('hidden');
   elements.resultState.classList.add('hidden');
+  elements.transcriptState.classList.add('hidden');
   elements.errorState.classList.add('hidden');
 }
 
@@ -284,48 +296,60 @@ async function handleClearKey() {
   elements.apiKeyInput.value = '';
 }
 
+// Fetch transcript from content script (shared helper)
+async function fetchTranscript() {
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+
+  let transcriptResponse;
+  try {
+    transcriptResponse = await chrome.tabs.sendMessage(tab.id, { action: 'getTranscript' });
+  } catch (e) {
+    await chrome.scripting.executeScript({
+      target: { tabId: tab.id },
+      files: ['content.js']
+    });
+    await new Promise(resolve => setTimeout(resolve, 500));
+    transcriptResponse = await chrome.tabs.sendMessage(tab.id, { action: 'getTranscript' });
+  }
+
+  if (!transcriptResponse || !transcriptResponse.transcript) {
+    throw new Error(transcriptResponse?.error || 'Could not fetch transcript. Make sure the video has captions enabled.');
+  }
+
+  return transcriptResponse.transcript;
+}
+
+// Get transcript only
+async function handleGetTranscript() {
+  showState(elements.loadingState);
+  elements.loadingStatus.textContent = 'Fetching transcript...';
+
+  try {
+    currentTranscript = await fetchTranscript();
+    elements.transcriptContent.textContent = currentTranscript;
+    showState(elements.transcriptState);
+  } catch (error) {
+    console.error('Transcript error:', error);
+    elements.errorMessage.textContent = error.message || 'Failed to fetch transcript. Please try again.';
+    showState(elements.errorState);
+  }
+}
+
 // Summarize handling
 async function handleSummarize() {
   showState(elements.loadingState);
   elements.loadingStatus.textContent = 'Fetching transcript...';
-  
+
   try {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    
-    // Get transcript from content script
-    let transcriptResponse;
-    try {
-      transcriptResponse = await chrome.tabs.sendMessage(tab.id, { action: 'getTranscript' });
-    } catch (e) {
-      // Try injecting content script first
-      await chrome.scripting.executeScript({
-        target: { tabId: tab.id },
-        files: ['content.js']
-      });
-      
-      // Wait a bit for script to initialize
-      await new Promise(resolve => setTimeout(resolve, 500));
-      transcriptResponse = await chrome.tabs.sendMessage(tab.id, { action: 'getTranscript' });
-    }
-    
-    if (!transcriptResponse || !transcriptResponse.transcript) {
-      throw new Error(transcriptResponse?.error || 'Could not fetch transcript. Make sure the video has captions enabled.');
-    }
-    
-    currentTranscript = transcriptResponse.transcript;
+    currentTranscript = await fetchTranscript();
     elements.loadingStatus.textContent = 'Generating summary...';
-    
-    // Get API key and settings
+
     const apiKey = await getStoredApiKey();
     const settings = await getSettings();
-    
-    // Generate summary
     const summary = await generateSummary(currentTranscript, apiKey, settings.summaryLength);
-    
-    // Display result
+
     elements.summaryContent.innerHTML = formatSummary(summary);
     showState(elements.resultState);
-    
   } catch (error) {
     console.error('Summarize error:', error);
     elements.errorMessage.textContent = error.message || 'Failed to generate summary. Please try again.';
@@ -400,7 +424,18 @@ function formatSummary(text) {
 // Copy handling
 async function handleCopy() {
   const text = elements.summaryContent.innerText;
-  
+
+  try {
+    await navigator.clipboard.writeText(text);
+    showToast('Copied to clipboard!', 'success');
+  } catch (error) {
+    showToast('Failed to copy', 'error');
+  }
+}
+
+async function handleCopyTranscript() {
+  const text = elements.transcriptContent.innerText;
+
   try {
     await navigator.clipboard.writeText(text);
     showToast('Copied to clipboard!', 'success');
