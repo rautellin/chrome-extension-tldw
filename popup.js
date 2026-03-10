@@ -296,27 +296,26 @@ async function handleClearKey() {
   elements.apiKeyInput.value = '';
 }
 
-// Fetch transcript from content script (shared helper)
+// Fetch transcript from local Python server
 async function fetchTranscript() {
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  if (!currentVideoId) {
+    throw new Error('No video ID found');
+  }
 
-  let transcriptResponse;
+  let response;
   try {
-    transcriptResponse = await chrome.tabs.sendMessage(tab.id, { action: 'getTranscript' });
+    response = await fetch(`http://localhost:5055/transcript?v=${currentVideoId}`);
   } catch (e) {
-    await chrome.scripting.executeScript({
-      target: { tabId: tab.id },
-      files: ['content.js']
-    });
-    await new Promise(resolve => setTimeout(resolve, 500));
-    transcriptResponse = await chrome.tabs.sendMessage(tab.id, { action: 'getTranscript' });
+    throw new Error('Could not connect to transcript server. Make sure the Python server is running:\n  pip install -r requirements.txt\n  python server.py');
   }
 
-  if (!transcriptResponse || !transcriptResponse.transcript) {
-    throw new Error(transcriptResponse?.error || 'Could not fetch transcript. Make sure the video has captions enabled.');
+  const data = await response.json();
+
+  if (!response.ok || !data.transcript) {
+    throw new Error(data.error || 'Could not fetch transcript. Make sure the video has captions enabled.');
   }
 
-  return transcriptResponse.transcript;
+  return data.transcript;
 }
 
 // Get transcript only
