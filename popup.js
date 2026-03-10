@@ -4,12 +4,14 @@ const elements = {
   setupView: document.getElementById('setup-view'),
   summaryView: document.getElementById('summary-view'),
   settingsView: document.getElementById('settings-view'),
-  
+
   // Setup
+  setupProvider: document.getElementById('setup-provider'),
   apiKeyInput: document.getElementById('api-key-input'),
   saveKeyBtn: document.getElementById('save-key-btn'),
   toggleVisibility: document.getElementById('toggle-visibility'),
-  
+  setupHelpLink: document.getElementById('setup-help-link'),
+
   // Summary states
   notYoutube: document.getElementById('not-youtube'),
   readyState: document.getElementById('ready-state'),
@@ -17,12 +19,12 @@ const elements = {
   resultState: document.getElementById('result-state'),
   transcriptState: document.getElementById('transcript-state'),
   errorState: document.getElementById('error-state'),
-  
+
   // Video info
   videoThumbnail: document.getElementById('video-thumbnail'),
   videoTitle: document.getElementById('video-title'),
   videoChannel: document.getElementById('video-channel'),
-  
+
   // Actions
   summarizeBtn: document.getElementById('summarize-btn'),
   transcriptBtn: document.getElementById('transcript-btn'),
@@ -37,18 +39,35 @@ const elements = {
   transcriptContent: document.getElementById('transcript-content'),
   loadingStatus: document.getElementById('loading-status'),
   errorMessage: document.getElementById('error-message'),
-  
+
   // Settings
   settingsBtn: document.getElementById('settings-btn'),
   backBtn: document.getElementById('back-btn'),
+  settingsProvider: document.getElementById('settings-provider'),
   settingsApiKey: document.getElementById('settings-api-key'),
+  settingsApiKeyLabel: document.getElementById('settings-api-key-label'),
   settingsToggleVisibility: document.getElementById('settings-toggle-visibility'),
   summaryLength: document.getElementById('summary-length'),
   saveSettingsBtn: document.getElementById('save-settings-btn'),
   clearKeyBtn: document.getElementById('clear-key-btn'),
-  
+
   // Toast
   toast: document.getElementById('toast')
+};
+
+const PROVIDER_CONFIG = {
+  openai: {
+    placeholder: 'sk-...',
+    helpUrl: 'https://platform.openai.com/api-keys',
+    helpText: 'Get your OpenAI API key →',
+    label: 'OpenAI API Key'
+  },
+  claude: {
+    placeholder: 'sk-ant-...',
+    helpUrl: 'https://console.anthropic.com/settings/keys',
+    helpText: 'Get your Claude API key →',
+    label: 'Claude API Key'
+  }
 };
 
 // State
@@ -59,19 +78,18 @@ let currentTranscript = null;
 document.addEventListener('DOMContentLoaded', init);
 
 async function init() {
-  const apiKey = await getStoredApiKey();
-  
+  const settings = await getSettings();
+  const apiKey = settings.apiKey;
+
   if (apiKey) {
     showSummaryView();
     checkCurrentTab();
   } else {
     showSetupView();
   }
-  
-  // Load settings
-  const settings = await getSettings();
+
   elements.summaryLength.value = settings.summaryLength || 'standard';
-  
+
   setupEventListeners();
 }
 
@@ -83,7 +101,8 @@ function setupEventListeners() {
   elements.apiKeyInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') handleSaveApiKey();
   });
-  
+  elements.setupProvider.addEventListener('change', updateSetupPlaceholder);
+
   // Summary view
   elements.summarizeBtn.addEventListener('click', handleSummarize);
   elements.transcriptBtn.addEventListener('click', handleGetTranscript);
@@ -95,32 +114,41 @@ function setupEventListeners() {
     checkCurrentTab();
   });
   elements.retryBtn.addEventListener('click', handleSummarize);
-  
+
   // Settings
   elements.settingsBtn.addEventListener('click', showSettingsView);
   elements.backBtn.addEventListener('click', () => {
     showSummaryView();
     checkCurrentTab();
   });
+  elements.settingsProvider.addEventListener('change', updateSettingsPlaceholder);
   elements.settingsToggleVisibility.addEventListener('click', () => togglePasswordVisibility(elements.settingsApiKey));
   elements.saveSettingsBtn.addEventListener('click', handleSaveSettings);
   elements.clearKeyBtn.addEventListener('click', handleClearKey);
 }
 
+function updateSetupPlaceholder() {
+  const provider = elements.setupProvider.value;
+  const config = PROVIDER_CONFIG[provider];
+  elements.apiKeyInput.placeholder = config.placeholder;
+  elements.setupHelpLink.href = config.helpUrl;
+  elements.setupHelpLink.textContent = config.helpText;
+}
+
+function updateSettingsPlaceholder() {
+  const provider = elements.settingsProvider.value;
+  const config = PROVIDER_CONFIG[provider];
+  elements.settingsApiKey.placeholder = config.placeholder;
+  elements.settingsApiKeyLabel.textContent = config.label;
+}
+
 // Storage functions
-async function getStoredApiKey() {
-  const result = await chrome.storage.local.get(['openaiApiKey']);
-  return result.openaiApiKey;
-}
-
-async function setStoredApiKey(key) {
-  await chrome.storage.local.set({ openaiApiKey: key });
-}
-
 async function getSettings() {
-  const result = await chrome.storage.local.get(['summaryLength']);
+  const result = await chrome.storage.local.get(['provider', 'apiKey', 'summaryLength']);
   return {
-    summaryLength: result.summaryLength || 'standard'
+    provider: result.provider || 'openai',
+    apiKey: result.apiKey || null,
+    summaryLength: result.summaryLength || 'bullet'
   };
 }
 
@@ -147,6 +175,7 @@ function hideAllStates() {
 function showSetupView() {
   hideAllViews();
   elements.setupView.classList.remove('hidden');
+  updateSetupPlaceholder();
 }
 
 function showSummaryView() {
@@ -154,16 +183,16 @@ function showSummaryView() {
   elements.summaryView.classList.remove('hidden');
 }
 
-function showSettingsView() {
+async function showSettingsView() {
   hideAllViews();
   elements.settingsView.classList.remove('hidden');
-  
-  // Load current API key (masked)
-  getStoredApiKey().then(key => {
-    if (key) {
-      elements.settingsApiKey.value = key;
-    }
-  });
+
+  const settings = await getSettings();
+  elements.settingsProvider.value = settings.provider;
+  if (settings.apiKey) {
+    elements.settingsApiKey.value = settings.apiKey;
+  }
+  updateSettingsPlaceholder();
 }
 
 function showState(state) {
@@ -175,27 +204,25 @@ function showState(state) {
 async function checkCurrentTab() {
   try {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    
+
     if (!tab?.url?.includes('youtube.com/watch')) {
       showState(elements.notYoutube);
       return;
     }
-    
-    // Extract video ID
+
     const url = new URL(tab.url);
     const videoId = url.searchParams.get('v');
-    
+
     if (!videoId) {
       showState(elements.notYoutube);
       return;
     }
-    
+
     currentVideoId = videoId;
-    
-    // Get video info from content script
+
     try {
       const response = await chrome.tabs.sendMessage(tab.id, { action: 'getVideoInfo' });
-      
+
       if (response && response.title) {
         elements.videoTitle.textContent = response.title;
         elements.videoChannel.textContent = response.channel || 'YouTube';
@@ -206,14 +233,13 @@ async function checkCurrentTab() {
         elements.videoThumbnail.style.backgroundImage = `url(https://img.youtube.com/vi/${videoId}/mqdefault.jpg)`;
       }
     } catch (e) {
-      // Content script might not be loaded yet
       elements.videoTitle.textContent = 'YouTube Video';
       elements.videoChannel.textContent = '';
       elements.videoThumbnail.style.backgroundImage = `url(https://img.youtube.com/vi/${videoId}/mqdefault.jpg)`;
     }
-    
+
     showState(elements.readyState);
-    
+
   } catch (error) {
     console.error('Error checking tab:', error);
     showState(elements.notYoutube);
@@ -223,44 +249,55 @@ async function checkCurrentTab() {
 // API Key handling
 async function handleSaveApiKey() {
   const apiKey = elements.apiKeyInput.value.trim();
-  
+  const provider = elements.setupProvider.value;
+
   if (!apiKey) {
     showToast('Please enter an API key', 'error');
     return;
   }
-  
-  if (!apiKey.startsWith('sk-')) {
-    showToast('Invalid API key format', 'error');
-    return;
-  }
-  
+
   elements.saveKeyBtn.disabled = true;
   elements.saveKeyBtn.textContent = 'Validating...';
-  
-  // Validate API key
-  const isValid = await validateApiKey(apiKey);
-  
+
+  const isValid = await validateApiKey(apiKey, provider);
+
   if (isValid) {
-    await setStoredApiKey(apiKey);
+    await saveSettings({ apiKey, provider });
     showToast('API key saved!', 'success');
     showSummaryView();
     checkCurrentTab();
   } else {
     showToast('Invalid API key', 'error');
   }
-  
+
   elements.saveKeyBtn.disabled = false;
   elements.saveKeyBtn.textContent = 'Save & Continue';
 }
 
-async function validateApiKey(apiKey) {
+async function validateApiKey(apiKey, provider) {
   try {
-    const response = await fetch('https://api.openai.com/v1/models', {
-      headers: {
-        'Authorization': `Bearer ${apiKey}`
-      }
-    });
-    return response.ok;
+    if (provider === 'claude') {
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true'
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1,
+          messages: [{ role: 'user', content: 'hi' }]
+        })
+      });
+      return response.ok;
+    } else {
+      const response = await fetch('https://api.openai.com/v1/models', {
+        headers: { 'Authorization': `Bearer ${apiKey}` }
+      });
+      return response.ok;
+    }
   } catch (error) {
     return false;
   }
@@ -269,28 +306,23 @@ async function validateApiKey(apiKey) {
 // Settings handling
 async function handleSaveSettings() {
   const apiKey = elements.settingsApiKey.value.trim();
+  const provider = elements.settingsProvider.value;
   const summaryLength = elements.summaryLength.value;
-  
-  if (apiKey && !apiKey.startsWith('sk-')) {
-    showToast('Invalid API key format', 'error');
-    return;
-  }
-  
+
   if (apiKey) {
-    const isValid = await validateApiKey(apiKey);
+    const isValid = await validateApiKey(apiKey, provider);
     if (!isValid) {
       showToast('Invalid API key', 'error');
       return;
     }
-    await setStoredApiKey(apiKey);
   }
-  
-  await saveSettings({ summaryLength });
+
+  await saveSettings({ apiKey, provider, summaryLength });
   showToast('Settings saved!', 'success');
 }
 
 async function handleClearKey() {
-  await chrome.storage.local.remove(['openaiApiKey']);
+  await chrome.storage.local.remove(['apiKey', 'provider', 'openaiApiKey']);
   showToast('API key removed', 'success');
   showSetupView();
   elements.apiKeyInput.value = '';
@@ -343,9 +375,8 @@ async function handleSummarize() {
     currentTranscript = await fetchTranscript();
     elements.loadingStatus.textContent = 'Generating summary...';
 
-    const apiKey = await getStoredApiKey();
     const settings = await getSettings();
-    const summary = await generateSummary(currentTranscript, apiKey, settings.summaryLength);
+    const summary = await generateSummary(currentTranscript, settings.apiKey, settings.provider, settings.summaryLength);
 
     elements.summaryContent.innerHTML = formatSummary(summary);
     showState(elements.resultState);
@@ -356,13 +387,25 @@ async function handleSummarize() {
   }
 }
 
-async function generateSummary(transcript, apiKey, length) {
+async function generateSummary(transcript, apiKey, provider, length) {
   const lengthInstructions = {
-    brief: 'Provide a very brief summary in 2-3 sentences.',
-    standard: 'Provide a concise summary in one paragraph (4-6 sentences).',
-    detailed: 'Provide a detailed summary with key points organized in multiple paragraphs or bullet points.'
+    brief: 'Provide a very brief summary in 2-3 sentences. Use plain text, no bullet points or markdown headers.',
+    standard: 'Provide a concise summary in one paragraph (4-6 sentences). Use plain text, no bullet points or markdown headers.',
+    bullet: 'Summarize the key points as a bullet point list using "- " for each point. Include 5-10 bullet points covering the main ideas. Do not use sub-bullets or nested lists.',
+    detailed: 'Provide a detailed summary with key points organized using markdown. Use ## for section headers and "- " for bullet points where appropriate. Include multiple sections covering the main themes.'
   };
-  
+
+  const systemPrompt = `You are a helpful assistant that creates TLDR summaries of video transcripts. ${lengthInstructions[length]} Focus on the main points and key takeaways. Be clear and informative.`;
+  const userPrompt = `Please provide a TLDR summary of this video transcript:\n\n${transcript.substring(0, 15000)}`;
+
+  if (provider === 'claude') {
+    return await generateWithClaude(apiKey, systemPrompt, userPrompt);
+  } else {
+    return await generateWithOpenAI(apiKey, systemPrompt, userPrompt);
+  }
+}
+
+async function generateWithOpenAI(apiKey, systemPrompt, userPrompt) {
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -372,52 +415,92 @@ async function generateSummary(transcript, apiKey, length) {
     body: JSON.stringify({
       model: 'gpt-4o-mini',
       messages: [
-        {
-          role: 'system',
-          content: `You are a helpful assistant that creates TLDR summaries of video transcripts. ${lengthInstructions[length]} Focus on the main points and key takeaways. Be clear and informative.`
-        },
-        {
-          role: 'user',
-          content: `Please provide a TLDR summary of this video transcript:\n\n${transcript.substring(0, 15000)}`
-        }
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt }
       ],
       max_tokens: 500,
       temperature: 0.7
     })
   });
-  
+
   if (!response.ok) {
     const error = await response.json();
     throw new Error(error.error?.message || 'Failed to generate summary');
   }
-  
+
   const data = await response.json();
   return data.choices[0].message.content;
 }
 
-function formatSummary(text) {
-  // Convert markdown-like formatting to HTML
-  return text
-    .split('\n\n')
-    .map(para => {
-      // Handle bullet points
-      if (para.startsWith('- ') || para.startsWith('• ')) {
-        const items = para.split('\n').map(item => 
-          `<li>${item.replace(/^[-•]\s*/, '')}</li>`
-        ).join('');
-        return `<ul>${items}</ul>`;
-      }
-      // Handle numbered lists
-      if (/^\d+\.\s/.test(para)) {
-        const items = para.split('\n').map(item => 
-          `<li>${item.replace(/^\d+\.\s*/, '')}</li>`
-        ).join('');
-        return `<ol>${items}</ol>`;
-      }
-      // Regular paragraph
-      return `<p>${para}</p>`;
+async function generateWithClaude(apiKey, systemPrompt, userPrompt) {
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 500,
+      system: systemPrompt,
+      messages: [
+        { role: 'user', content: userPrompt }
+      ]
     })
-    .join('');
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error?.message || 'Failed to generate summary');
+  }
+
+  const data = await response.json();
+  return data.content[0].text;
+}
+
+function formatSummary(text) {
+  const lines = text.split('\n');
+  let html = '';
+  let inUl = false;
+  let inOl = false;
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed) {
+      if (inUl) { html += '</ul>'; inUl = false; }
+      if (inOl) { html += '</ol>'; inOl = false; }
+      continue;
+    }
+
+    const formatted = trimmed
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.+?)\*/g, '<em>$1</em>');
+
+    if (/^#{1,3}\s/.test(trimmed)) {
+      if (inUl) { html += '</ul>'; inUl = false; }
+      if (inOl) { html += '</ol>'; inOl = false; }
+      const headerText = formatted.replace(/^#{1,3}\s+/, '');
+      html += `<h4>${headerText}</h4>`;
+    } else if (/^[-•]\s/.test(trimmed)) {
+      if (inOl) { html += '</ol>'; inOl = false; }
+      if (!inUl) { html += '<ul>'; inUl = true; }
+      html += `<li>${formatted.replace(/^[-•]\s+/, '')}</li>`;
+    } else if (/^\d+\.\s/.test(trimmed)) {
+      if (inUl) { html += '</ul>'; inUl = false; }
+      if (!inOl) { html += '<ol>'; inOl = true; }
+      html += `<li>${formatted.replace(/^\d+\.\s+/, '')}</li>`;
+    } else {
+      if (inUl) { html += '</ul>'; inUl = false; }
+      if (inOl) { html += '</ol>'; inOl = false; }
+      html += `<p>${formatted}</p>`;
+    }
+  }
+
+  if (inUl) html += '</ul>';
+  if (inOl) html += '</ol>';
+  return html;
 }
 
 // Copy handling
@@ -445,15 +528,23 @@ async function handleCopyTranscript() {
 
 // Utility functions
 function togglePasswordVisibility(input) {
-  input.type = input.type === 'password' ? 'text' : 'password';
+  const btn = input.parentElement.querySelector('.icon-btn-small');
+  const svg = btn.querySelector('.eye-icon');
+
+  if (input.type === 'password') {
+    input.type = 'text';
+    svg.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>';
+  } else {
+    input.type = 'password';
+    svg.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line>';
+  }
 }
 
 function showToast(message, type = 'info') {
   elements.toast.textContent = message;
   elements.toast.className = `toast ${type} show`;
-  
+
   setTimeout(() => {
     elements.toast.classList.remove('show');
   }, 3000);
 }
-

@@ -224,7 +224,12 @@ body {
   color: var(--text-secondary);
   font-size: 14px;
   line-height: 1.5;
-  margin-bottom: 24px;
+  margin-bottom: 16px;
+}
+
+.setup-card .setting-item {
+  margin-bottom: 16px;
+  text-align: left;
 }
 
 /* Input Group */
@@ -443,6 +448,27 @@ body {
   margin-bottom: 6px;
 }
 
+.summary-content h4 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 14px 0 6px 0;
+}
+
+.summary-content h4:first-child {
+  margin-top: 0;
+}
+
+.summary-content strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.summary-content em {
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
 /* Settings */
 .settings-header {
   display: flex;
@@ -479,15 +505,38 @@ body {
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   padding: 12px 16px;
+  padding-right: 36px;
   font-size: 14px;
   color: var(--text-primary);
   cursor: pointer;
   transition: all 0.2s ease;
+  -webkit-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23a0a0a0' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
 }
 
 .setting-item select:focus {
   outline: none;
   border-color: var(--accent);
+}
+
+/* Disclaimer */
+.disclaimer {
+  margin-top: 16px;
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.disclaimer a {
+  color: var(--text-secondary);
+  text-decoration: underline;
+}
+
+.disclaimer a:hover {
+  color: var(--text-primary);
 }
 
 /* Footer */
@@ -497,6 +546,16 @@ body {
   border-top: 1px solid var(--border);
   color: var(--text-muted);
   font-size: 11px;
+}
+
+.footer a {
+  color: var(--text-muted);
+  text-decoration: none;
+}
+
+.footer a:hover {
+  color: var(--text-secondary);
+  text-decoration: underline;
 }
 
 /* Toast */
