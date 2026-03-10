@@ -5,8 +5,7 @@
   "manifest_version": 3,
   "permissions": [
     "activeTab",
-    "storage",
-    "scripting"
+    "storage"
   ],
   "host_permissions": [
     "https://www.youtube.com/*",
@@ -33,12 +32,6 @@
     {
       "matches": ["https://www.youtube.com/*"],
       "js": ["content.js"]
-    },
-    {
-      "matches": ["https://www.youtube.com/*"],
-      "js": ["main-world.js"],
-      "world": "MAIN",
-      "run_at": "document_idle"
     }
   ]
 }
