@@ -66,18 +66,18 @@ async function extractTranscriptFromDOM() {
   transcriptBtn.click();
 
   // Wait for transcript segments to appear
-  const firstSegment = await waitForElement('transcript-segment-view-model', 6000);
+  const firstSegment = await waitForElement('ytd-transcript-segment-renderer', 6000);
   if (!firstSegment) {
     throw new Error('Transcript did not load. Please try again.');
   }
 
   await sleep(300); // Let remaining segments render
 
-  const segments = document.querySelectorAll('transcript-segment-view-model');
+  const segments = document.querySelectorAll('ytd-transcript-segment-renderer');
   const text = Array.from(segments)
     .map(seg =>
-      seg.querySelector('span[role="text"]')?.textContent?.trim() ||
-      seg.querySelector('.yt-core-attributed-string')?.textContent?.trim()
+      seg.querySelector('yt-formatted-string.segment-text')?.textContent?.trim() ||
+      seg.querySelector('.segment-text')?.textContent?.trim()
     )
     .filter(Boolean)
     .join(' ');
