@@ -21,9 +21,8 @@ const elements = {
   errorState: document.getElementById('error-state'),
 
   // Video info
-  videoThumbnail: document.getElementById('video-thumbnail'),
   videoTitle: document.getElementById('video-title'),
-  videoChannel: document.getElementById('video-channel'),
+  videoThumbnail: document.getElementById('video-thumbnail'),
 
   // Actions
   summarizeBtn: document.getElementById('summarize-btn'),
@@ -220,22 +219,19 @@ async function checkCurrentTab() {
 
     currentVideoId = videoId;
 
+    elements.videoThumbnail.style.backgroundImage = `url(https://img.youtube.com/vi/${videoId}/mqdefault.jpg)`;
+
     try {
       const response = await chrome.tabs.sendMessage(tab.id, { action: 'getVideoInfo' });
-
-      if (response && response.title) {
-        elements.videoTitle.textContent = response.title;
-        elements.videoChannel.textContent = response.channel || 'YouTube';
-        elements.videoThumbnail.style.backgroundImage = `url(https://img.youtube.com/vi/${videoId}/mqdefault.jpg)`;
+      const title = response?.title?.trim();
+      if (title) {
+        elements.videoTitle.textContent = title;
+        elements.videoTitle.classList.remove('hidden');
       } else {
-        elements.videoTitle.textContent = 'YouTube Video';
-        elements.videoChannel.textContent = 'Loading...';
-        elements.videoThumbnail.style.backgroundImage = `url(https://img.youtube.com/vi/${videoId}/mqdefault.jpg)`;
+        elements.videoTitle.classList.add('hidden');
       }
     } catch (e) {
-      elements.videoTitle.textContent = 'YouTube Video';
-      elements.videoChannel.textContent = '';
-      elements.videoThumbnail.style.backgroundImage = `url(https://img.youtube.com/vi/${videoId}/mqdefault.jpg)`;
+      elements.videoTitle.classList.add('hidden');
     }
 
     showState(elements.readyState);

@@ -74,13 +74,8 @@
 
         <!-- Ready to Summarize -->
         <div id="ready-state" class="hidden py-2">
-          <div class="bg-surface border border-edge rounded-[14px] p-4 mb-5 flex gap-3.5 items-center">
-            <div class="video-thumbnail w-[100px] h-14 bg-surface-raised rounded-[6px] flex-shrink-0 bg-cover bg-center" id="video-thumbnail"></div>
-            <div class="flex-1 min-w-0 text-left">
-              <h3 id="video-title" class="text-sm font-semibold mb-1 line-clamp-2">Video Title</h3>
-              <span id="video-channel" class="text-xs text-dim">Channel Name</span>
-            </div>
-          </div>
+          <div class="video-thumbnail-full bg-surface-raised" id="video-thumbnail"></div>
+          <p id="video-title" class="hidden text-sm font-semibold leading-snug mb-4 line-clamp-2"></p>
           <button id="summarize-btn" class="btn-primary">
             <i class="ph ph-magic-wand"></i>
             Generate Summary
