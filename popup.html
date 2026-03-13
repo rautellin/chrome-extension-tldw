@@ -4,17 +4,22 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>TLDW</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+  <link rel="stylesheet" href="tailwind.css">
   <link rel="stylesheet" href="popup.css">
 </head>
 <body>
-  <div class="container">
+  <div class="flex flex-col min-h-[400px]">
+
     <!-- Header -->
-    <header class="header">
-      <div class="logo">
-        <span class="logo-icon">⚡</span>
-        <h1>TLDW</h1>
+    <header class="flex items-center justify-between px-5 py-4 border-b border-edge bg-gradient-to-b from-surface to-[#0f0f0f]">
+      <div class="flex items-center">
+        <img src="icons/icon128.png" alt="TLDW" class="h-7 w-auto">
       </div>
-      <button id="settings-btn" class="icon-btn" title="Settings">
+      <button id="settings-btn" class="bg-transparent border-0 text-dim cursor-pointer p-2 rounded-[6px] flex items-center justify-center transition-all duration-200 hover:bg-surface-hover hover:text-white" title="Settings">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="12" cy="12" r="3"></circle>
           <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
@@ -24,78 +29,84 @@
 
     <!-- Main Content -->
     <main id="main-content">
+
       <!-- API Key Setup View -->
-      <div id="setup-view" class="view">
-        <div class="setup-card">
-          <div class="setup-icon">🔑</div>
-          <h2>Welcome to TLDW!</h2>
-          <p>Choose your AI provider and enter your API key to start summarizing.</p>
-          <div class="setting-item">
-            <label for="setup-provider">AI Provider</label>
-            <select id="setup-provider">
-              <option value="openai">OpenAI</option>
-              <option value="claude">Claude (Anthropic)</option>
-            </select>
+      <div id="setup-view" class="view p-5">
+        <div class="text-center py-5">
+          <div class="text-5xl mb-4 text-accent leading-none"><i class="ph ph-key"></i></div>
+          <h2 class="text-[22px] font-bold mb-2">Welcome to TLDW!</h2>
+          <p class="text-dim text-sm leading-relaxed mb-4">Choose your AI provider and enter your API key to start summarizing.</p>
+          <div class="flex flex-col gap-2 mb-4 text-left">
+            <label class="text-[13px] font-medium text-dim" for="setup-provider">AI Provider</label>
+            <div class="relative">
+              <select id="setup-provider" class="select-field w-full bg-surface border border-edge rounded-[10px] px-4 py-3 pr-10 text-sm text-white cursor-pointer transition-all duration-200 outline-none focus:border-accent">
+                <option value="openai">OpenAI</option>
+                <option value="claude">Claude (Anthropic)</option>
+              </select>
+              <i class="ph ph-caret-down absolute right-3 top-1/2 -translate-y-1/2 text-dim pointer-events-none"></i>
+            </div>
           </div>
-          <div class="input-group">
-            <input type="password" id="api-key-input" placeholder="sk-..." autocomplete="off">
-            <button id="toggle-visibility" class="icon-btn-small" title="Show/Hide">
+          <div class="relative mb-4">
+            <input type="password" id="api-key-input" placeholder="sk-..." autocomplete="off"
+              class="w-full bg-surface border border-edge rounded-[10px] px-4 py-3.5 pr-11 text-sm text-white transition-all duration-200 placeholder:text-faint outline-none focus:border-accent focus:ring-[3px] focus:ring-accent/30">
+            <button id="toggle-visibility" class="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-[6px] text-faint hover:text-dim transition-colors border-0 bg-transparent cursor-pointer flex items-center justify-center" title="Show/Hide">
               <svg class="eye-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
                 <line x1="1" y1="1" x2="23" y2="23"></line>
               </svg>
             </button>
           </div>
-          <button id="save-key-btn" class="btn-primary">Save & Continue</button>
-          <a id="setup-help-link" href="https://platform.openai.com/api-keys" target="_blank" class="help-link">Get your API key →</a>
-          <p class="disclaimer">Your API key is stored locally on your device and is never uploaded to any server. This extension is <a href="https://github.com/rautellin/chrome-extension-tldw" target="_blank">open source</a>.</p>
+          <button id="save-key-btn" class="btn-primary">Save &amp; Continue</button>
+          <a id="setup-help-link" href="https://platform.openai.com/api-keys" target="_blank" class="inline-block mt-4 text-accent no-underline text-[13px] transition-all duration-200 hover:underline">Get your API key →</a>
+          <p class="mt-4 text-[11px] text-faint leading-relaxed">Your API key is stored locally on your device and is never uploaded to any server. This extension is <a href="https://github.com/rautellin/chrome-extension-tldw" target="_blank" class="text-dim underline hover:text-white">open source</a>.</p>
         </div>
       </div>
 
       <!-- Summary View -->
-      <div id="summary-view" class="view hidden">
+      <div id="summary-view" class="view hidden p-5">
+
         <!-- Not on YouTube -->
-        <div id="not-youtube" class="state-card hidden">
-          <div class="state-icon">📺</div>
-          <h3>Navigate to YouTube</h3>
-          <p>Open a YouTube video to get started with your summary.</p>
+        <div id="not-youtube" class="hidden text-center py-8 px-5">
+          <div class="text-5xl mb-4 text-dim leading-none"><i class="ph ph-youtube-logo"></i></div>
+          <h3 class="text-lg font-semibold mb-2">Navigate to YouTube</h3>
+          <p class="text-dim text-sm leading-relaxed">Open a YouTube video to get started with your summary.</p>
         </div>
 
         <!-- Ready to Summarize -->
-        <div id="ready-state" class="state-card hidden">
-          <div class="video-preview">
-            <div class="video-thumbnail" id="video-thumbnail"></div>
-            <div class="video-info">
-              <h3 id="video-title">Video Title</h3>
-              <span id="video-channel">Channel Name</span>
+        <div id="ready-state" class="hidden py-2">
+          <div class="bg-surface border border-edge rounded-[14px] p-4 mb-5 flex gap-3.5 items-center">
+            <div class="video-thumbnail w-[100px] h-14 bg-surface-raised rounded-[6px] flex-shrink-0 bg-cover bg-center" id="video-thumbnail"></div>
+            <div class="flex-1 min-w-0 text-left">
+              <h3 id="video-title" class="text-sm font-semibold mb-1 line-clamp-2">Video Title</h3>
+              <span id="video-channel" class="text-xs text-dim">Channel Name</span>
             </div>
           </div>
-          <button id="summarize-btn" class="btn-primary btn-large">
-            <span class="btn-icon">⚡</span>
+          <button id="summarize-btn" class="btn-primary">
+            <i class="ph ph-magic-wand"></i>
             Generate Summary
           </button>
-          <button id="transcript-btn" class="btn-secondary btn-large" style="margin-top: 10px;">
-            <span class="btn-icon">📄</span>
+          <button id="transcript-btn" class="btn-secondary mt-2.5">
+            <i class="ph ph-file-text"></i>
             Get Transcript
           </button>
         </div>
 
         <!-- Loading State -->
-        <div id="loading-state" class="state-card hidden">
-          <div class="loader">
+        <div id="loading-state" class="hidden text-center py-8 px-5">
+          <div class="flex justify-center gap-2 mb-5">
             <div class="loader-ring"></div>
             <div class="loader-ring"></div>
             <div class="loader-ring"></div>
           </div>
-          <h3>Generating Summary...</h3>
-          <p id="loading-status">Fetching transcript...</p>
+          <h3 class="text-lg font-semibold mb-2">Generating Summary...</h3>
+          <p id="loading-status" class="text-faint text-[13px] mt-2">Fetching transcript...</p>
         </div>
 
         <!-- Summary Result -->
         <div id="result-state" class="hidden">
-          <div class="summary-header">
-            <h3>📝 Summary</h3>
-            <button id="copy-btn" class="icon-btn" title="Copy to clipboard">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-base font-semibold flex items-center gap-1.5"><i class="ph ph-note-pencil"></i> Summary</h3>
+            <button id="copy-btn" class="bg-transparent border-0 text-dim cursor-pointer p-2 rounded-[6px] flex items-center justify-center transition-all duration-200 hover:bg-surface-hover hover:text-white" title="Copy to clipboard">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
                 <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
@@ -104,15 +115,15 @@
           </div>
           <div id="summary-content" class="summary-content"></div>
           <button id="new-summary-btn" class="btn-secondary">
-            <span>↻</span> Regenerate
+            <i class="ph ph-arrow-clockwise"></i> Regenerate
           </button>
         </div>
 
         <!-- Transcript Result -->
         <div id="transcript-state" class="hidden">
-          <div class="summary-header">
-            <h3>📄 Transcript</h3>
-            <button id="copy-transcript-btn" class="icon-btn" title="Copy to clipboard">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-base font-semibold flex items-center gap-1.5"><i class="ph ph-file-text"></i> Transcript</h3>
+            <button id="copy-transcript-btn" class="bg-transparent border-0 text-dim cursor-pointer p-2 rounded-[6px] flex items-center justify-center transition-all duration-200 hover:bg-surface-hover hover:text-white" title="Copy to clipboard">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
                 <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
@@ -121,42 +132,47 @@
           </div>
           <div id="transcript-content" class="summary-content"></div>
           <button id="back-to-video-btn" class="btn-secondary">
-            <span>←</span> Back
+            <i class="ph ph-arrow-left"></i> Back
           </button>
         </div>
 
         <!-- Error State -->
-        <div id="error-state" class="state-card hidden">
-          <div class="state-icon error-icon">⚠️</div>
-          <h3>Oops!</h3>
-          <p id="error-message">Something went wrong.</p>
+        <div id="error-state" class="hidden text-center py-8 px-5">
+          <div class="text-5xl mb-4 text-danger leading-none"><i class="ph ph-warning"></i></div>
+          <h3 class="text-lg font-semibold mb-2">Oops!</h3>
+          <p id="error-message" class="text-dim text-sm leading-relaxed mb-4">Something went wrong.</p>
           <button id="retry-btn" class="btn-secondary">Try Again</button>
         </div>
+
       </div>
 
       <!-- Settings View -->
-      <div id="settings-view" class="view hidden">
-        <div class="settings-header">
-          <button id="back-btn" class="icon-btn">
+      <div id="settings-view" class="view hidden p-5">
+        <div class="flex items-center gap-3 mb-6">
+          <button id="back-btn" class="bg-transparent border-0 text-dim cursor-pointer p-2 rounded-[6px] flex items-center justify-center transition-all duration-200 hover:bg-surface-hover hover:text-white">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M19 12H5M12 19l-7-7 7-7"></path>
             </svg>
           </button>
-          <h2>Settings</h2>
+          <h2 class="text-lg font-semibold">Settings</h2>
         </div>
-        <div class="settings-content">
-          <div class="setting-item">
-            <label for="settings-provider">AI Provider</label>
-            <select id="settings-provider">
-              <option value="openai">OpenAI</option>
-              <option value="claude">Claude (Anthropic)</option>
-            </select>
+        <div class="flex flex-col gap-5">
+          <div class="flex flex-col gap-2">
+            <label class="text-[13px] font-medium text-dim" for="settings-provider">AI Provider</label>
+            <div class="relative">
+              <select id="settings-provider" class="select-field w-full bg-surface border border-edge rounded-[10px] px-4 py-3 pr-10 text-sm text-white cursor-pointer transition-all duration-200 outline-none focus:border-accent">
+                <option value="openai">OpenAI</option>
+                <option value="claude">Claude (Anthropic)</option>
+              </select>
+              <i class="ph ph-caret-down absolute right-3 top-1/2 -translate-y-1/2 text-dim pointer-events-none"></i>
+            </div>
           </div>
-          <div class="setting-item">
-            <label id="settings-api-key-label" for="settings-api-key">API Key</label>
-            <div class="input-group">
-              <input type="password" id="settings-api-key" placeholder="sk-...">
-              <button id="settings-toggle-visibility" class="icon-btn-small">
+          <div class="flex flex-col gap-2">
+            <label id="settings-api-key-label" class="text-[13px] font-medium text-dim" for="settings-api-key">API Key</label>
+            <div class="relative">
+              <input type="password" id="settings-api-key" placeholder="sk-..."
+                class="w-full bg-surface border border-edge rounded-[10px] px-4 py-3.5 pr-11 text-sm text-white transition-all duration-200 placeholder:text-faint outline-none focus:border-accent focus:ring-[3px] focus:ring-accent/30">
+              <button id="settings-toggle-visibility" class="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-[6px] text-faint hover:text-dim transition-colors border-0 bg-transparent cursor-pointer flex items-center justify-center">
                 <svg class="eye-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
                   <line x1="1" y1="1" x2="23" y2="23"></line>
@@ -164,26 +180,34 @@
               </button>
             </div>
           </div>
-          <div class="setting-item">
-            <label for="summary-length">Summary Length</label>
-            <select id="summary-length">
-              <option value="brief">Brief (2-3 sentences)</option>
-              <option value="standard">Standard (1 paragraph)</option>
-              <option value="bullet" selected>Bullet Points</option>
-              <option value="detailed">Detailed (multiple paragraphs)</option>
-            </select>
+          <div class="flex flex-col gap-2">
+            <label class="text-[13px] font-medium text-dim" for="summary-length">Summary Length</label>
+            <div class="relative">
+              <select id="summary-length" class="select-field w-full bg-surface border border-edge rounded-[10px] px-4 py-3 pr-10 text-sm text-white cursor-pointer transition-all duration-200 outline-none focus:border-accent">
+                <option value="brief">Brief (2-3 sentences)</option>
+                <option value="standard">Standard (1 paragraph)</option>
+                <option value="bullet" selected>Bullet Points</option>
+                <option value="detailed">Detailed (multiple paragraphs)</option>
+              </select>
+              <i class="ph ph-caret-down absolute right-3 top-1/2 -translate-y-1/2 text-dim pointer-events-none"></i>
+            </div>
           </div>
           <button id="save-settings-btn" class="btn-primary">Save Settings</button>
-          <button id="clear-key-btn" class="btn-danger">Remove API Key</button>
-          <p class="disclaimer">Your API key is stored locally and never uploaded. <a href="https://github.com/rautellin/chrome-extension-tldw" target="_blank">View source code</a>.</p>
+          <button id="clear-key-btn" class="btn-secondary">Remove API Key</button>
+          <p class="text-[11px] text-faint leading-relaxed">Your API key is stored locally and never uploaded. <a href="https://github.com/rautellin/chrome-extension-tldw" target="_blank" class="text-dim underline hover:text-white">View source code</a>.</p>
         </div>
       </div>
+
     </main>
 
     <!-- Footer -->
-    <footer class="footer">
-      <span>TLDW v1.0 &middot; <a href="https://github.com/rautellin/chrome-extension-tldw" target="_blank">GitHub</a></span>
+    <footer class="px-5 py-3 text-center border-t border-edge text-faint text-[11px] flex items-center justify-between">
+      <span>TLDW v1.0 &middot; <a href="https://github.com/rautellin/chrome-extension-tldw" target="_blank" class="text-faint no-underline hover:text-dim hover:underline">GitHub</a></span>
+      <a href="https://buymeacoffee.com/rautellinn" target="_blank" class="text-faint no-underline hover:text-dim flex items-center gap-1.5 mr-1">
+        <i class="ph ph-coffee"></i> Buy me a coffee
+      </a>
     </footer>
+
   </div>
 
   <div id="toast" class="toast hidden"></div>
@@ -191,4 +215,3 @@
   <script src="popup.js"></script>
 </body>
 </html>
-
