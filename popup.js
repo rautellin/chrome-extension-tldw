@@ -324,26 +324,27 @@ async function handleClearKey() {
   elements.apiKeyInput.value = '';
 }
 
-// Fetch transcript from local Python server
+// Fetch transcript by injecting into the YouTube page DOM
 async function fetchTranscript() {
-  if (!currentVideoId) {
-    throw new Error('No video ID found');
-  }
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
-  let response;
-  try {
-    response = await fetch(`http://localhost:5055/transcript?v=${currentVideoId}`);
-  } catch (e) {
-    throw new Error('Could not connect to transcript server. Make sure the Python server is running:\n  pip install -r requirements.txt\n  python server.py');
-  }
-
-  const data = await response.json();
-
-  if (!response.ok || !data.transcript) {
-    throw new Error(data.error || 'Could not fetch transcript. Make sure the video has captions enabled.');
-  }
-
-  return data.transcript;
+  return new Promise((resolve, reject) => {
+    chrome.tabs.sendMessage(tab.id, { action: 'getTranscript' }, (response) => {
+      if (chrome.runtime.lastError) {
+        reject(new Error('Could not connect to page. Please refresh the YouTube tab and try again.'));
+        return;
+      }
+      if (response?.error) {
+        reject(new Error(response.error));
+        return;
+      }
+      if (response?.transcript) {
+        resolve(response.transcript);
+        return;
+      }
+      reject(new Error('Could not extract transcript.'));
+    });
+  });
 }
 
 // Get transcript only
